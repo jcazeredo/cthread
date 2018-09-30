@@ -17,7 +17,6 @@ int ultimo_tid = 1;
 
 TCB_t *threadExecutando;
 TCB_t *threadPrincipal;
-TCB_t *th;
 
 FILA2 filaAptos[3];
 FILA2 filaBloqueados;
@@ -81,8 +80,6 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 		inicializado = 1;	
 	}
 
-	//creating new thread
-
 	TCB_t *novaThread;
 	novaThread = (TCB_t*) malloc(sizeof(TCB_t));
 
@@ -112,12 +109,24 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 	return novaThread->tid;
 }
 
+// 
 int csetprio(int tid, int prio) {
 	return -1;
 }
 
-int cyield(void) {
-	return -1;
+//changes the executings thread state to APTO
+//inserts it in the end of the queue
+//calls the dispatcher to execute the next thread, saving the mains context
+//variable that points the return to the mains thread after the cyield (0 -> SUCCESS; -1 -> ERROR)
+
+int cyield(){
+	exec->state = PROCST_APTO;
+
+	changeState(&aptos, exec);
+	swapcontext(&exec->context, &dispatch_ctx);
+	
+	returnThread = 0;
+	return 0;	
 }
 
 int cjoin(int tid) {
@@ -214,7 +223,6 @@ void threadEnd(){
 }
 
 TCB_t *proximaExecucao(){
-
 	// Remover
 	printf("Função proximaExecucao Iniciada\n");
 
@@ -229,7 +237,6 @@ int	Insert(PFILA2 pfila, TCB_t *tcb) {
 	// Remover
 	printf("Função Insert Iniciada\n");
 
-	
 	if (LastFila2(pfila) == 0) {
 		return InsertAfterIteratorFila2(pfila, tcb);
 	}	
