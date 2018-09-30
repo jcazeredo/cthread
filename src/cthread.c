@@ -13,6 +13,7 @@ int returnThread = 0;
 TCB_t *exec;
 TCB_t *mainThread;
 
+// lalalalalala
 
 FILA2 aptos;
 FILA2 bloqueados;
