@@ -124,24 +124,22 @@ int cyield(){
 
 	changeState(&aptos, exec);
 	swapcontext(&exec->context, &dispatch_ctx);
-
-	changeState(&aptos, exec);
-	swapcontext(&exec->context, &dispatch_ctx);
 	
+<<<<<<< HEAD
 //fhudshfusdfsufsd___777 raffa moreira mano
 //dsjfosidjfsodifjs
 
+=======
+>>>>>>> master
 	returnThread = 0;
 	return 0;	
 }
 
 int cjoin(int tid) {
-	//testeeeeeeeeeee
 	return -1;
 }
 
 int csem_init(csem_t *sem, int count) {
-	//nova função etcetcetc
 	return -1;
 }
 
