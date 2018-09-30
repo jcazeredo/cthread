@@ -13,9 +13,7 @@
 #include <stdio.h>
 
 void* func0(void *arg) {
-	// printf("Eu sou a thread ID0 imprimindo %d\n", *((int *)arg));
-	printf("aaaad\n");
-	printf("dassda");
+	printf("Eu sou a thread ID0 imprimindo %d\n", *((int *)arg));
 	return;
 }
 
@@ -29,10 +27,8 @@ int main(int argc, char *argv[]) {
 	int	id0, id1;
 	int i;
 
-	// id0 = ccreate(func0, (void *)&i, 0);
-	id1 = ccreate(func1, (void *)&i, 0);
-
-	printf("%d\n", id0);
+	id0 = ccreate(func0, (void *)&i, 0);
+	// id1 = ccreate(func1, (void *)&i, 0);
 
 	printf("Eu sou a main após a criação de ID0 e ID1\n");
 
