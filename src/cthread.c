@@ -80,33 +80,33 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 		inicializado = 1;	
 	}
 
-	TCB_t *novaThread;
-	novaThread = (TCB_t*) malloc(sizeof(TCB_t));
+	TCB_t *thread;
+	thread = (TCB_t*) malloc(sizeof(TCB_t));
 
-	novaThread->tid = ultimo_tid;
-	novaThread->prio = prio;
-	novaThread->state = 0;
+	thread->tid = ultimo_tid;
+	thread->prio = prio;
+	thread->state = 0;
 
-	getcontext(&(novaThread->context));
+	getcontext(&(thread->context));
 
-	novaThread->context.uc_link = &threadEnd_ctx;
-	novaThread->context.uc_stack.ss_sp = (char*) malloc(stackSize);
-	novaThread->context.uc_stack.ss_size = stackSize;
+	thread->context.uc_link = &threadEnd_ctx;
+	thread->context.uc_stack.ss_sp = (char*) malloc(stackSize);
+	thread->context.uc_stack.ss_size = stackSize;
 	
-	makecontext(&(novaThread->context), (void (*) (void))start, 1, arg);
+	makecontext(&(thread->context), (void (*) (void))start, 1, arg);
 
-	if (Insert(&filaAptos[0], novaThread) == 0)
+	if (Insert(&filaAptos[0], thread) == 0)
 		printf("Nova Thread foi inserida na fila de Aptos\n");
 	else{
 		printf("Erro ao inserir na fila de Aptos\n");
 		return -1;
 	}
 
-	printf("Thread Criada - ID: %d\n", novaThread->tid);
+	printf("Thread Criada - ID: %d\n", thread->tid);
 
 	ultimo_tid++;
 	
-	return novaThread->tid;
+	return thread->tid;
 }
 
 // 
@@ -134,6 +134,7 @@ int cjoin(int tid) {
 }
 
 int csem_init(csem_t *sem, int count) {
+	//nova função etcetcetc
 	return -1;
 }
 
