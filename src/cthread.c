@@ -22,7 +22,7 @@ FILA2 cjoinQueue;
 
 ucontext_t endThread, dispatch_ctx;
 
-
+//teste
 // Retorna o TID da thread criada
 int ccreate (void* (*start)(void*), void *arg, int prio) {
 
