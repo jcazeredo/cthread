@@ -16,7 +16,7 @@ TO-DO:
 cidentify()
 checkJoin()
 csetprio()
-cJoin()
+cJoin()s
 lookForTidinBlockedQueue()
 */
 
@@ -185,7 +185,7 @@ int cwait(csem_t *sem){
 
 	if(sem->count < 0){
 
-		exec->state = PROCST_BLOQ;
+		threadExecutando->state = PROCST_BLOQ;
 
 		if(AppendFila2(sem->fila, (void *) threadExecutando) != 0){
 			printf("Nao foi colocada no fim de sem->fila em cwait()\n");
@@ -353,6 +353,9 @@ void changeState(PFILA2 fila, TCB_t *proxThread){
 		if(Insert(fila, proxThread) != 0)
 			printf("changeState() nao conseguiu inserir na fila!\n");
 }
+
+//this function checks if there isnt more than one thread waiting for the same tid
+//if positive-> 0 (Error); if negative, 1 (Success)
 
 int checkJoin(int tid){
 
