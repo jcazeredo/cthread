@@ -125,6 +125,9 @@ int cyield(){
 	changeState(&aptos, exec);
 	swapcontext(&exec->context, &dispatch_ctx);
 	
+//fhudshfusdfsufsd
+//dsjfosidjfsodifjs
+
 	returnThread = 0;
 	return 0;	
 }
