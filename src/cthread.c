@@ -125,12 +125,6 @@ int cyield(){
 	changeState(&aptos, exec);
 	swapcontext(&exec->context, &dispatch_ctx);
 	
-<<<<<<< HEAD
-//fhudshfusdfsufsd___777 raffa moreira mano
-//dsjfosidjfsodifjs
-
-=======
->>>>>>> master
 	returnThread = 0;
 	return 0;	
 }
