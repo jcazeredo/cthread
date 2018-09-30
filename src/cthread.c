@@ -4,16 +4,25 @@
 #include "../include/support.h"
 #include "../include/cthread.h"
 #include "../include/cdata.h"
+
 #define stackSize SIGSTKSZ
-#define tidPadrao -1
+#define MAX_STU_CHAR 100
+#define STU1 "Julio - 000 \n"
+#define STU2 "Basso - 000 \n"
+#define STU3 "Juan - 000 \n"
 
 /*
-
+TO-DO:
+cidentify()
+checkJoin()
+csetprio()
+cJoin()
+lookForTidinBlockedQueue()
 */
 
 int inicializado = 0;
 int ultimo_tid = 1;
-// int returnThread = 0;
+// int returnThread = 0; inutil??
 
 TCB_t *threadExecutando;
 TCB_t *threadPrincipal;
@@ -33,6 +42,8 @@ void dispatcher();
 void threadEnd();
 TCB_t *proximaExecucao();
 int	Insert(PFILA2 pfila, TCB_t *tcb);
+void changeState(PFILA2 fila, TCB_t *proxThread);
+int checkJoin(int tid);
 
 // Retorna o TID da thread criada
 int ccreate (void* (*start)(void*), void *arg, int prio) {
@@ -109,45 +120,136 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 	return thread->tid;
 }
 
-// 
+int cyield(){
+	threadExecutando->state = PROCST_APTO;
+
+	changeState(&filaAptos[0], threadExecutando);
+	swapcontext(&threadExecutando->context, &dispatcher_ctx);
+	
+	// returnThread = 0; inutil?
+	return 0;	
+}
+
 int csetprio(int tid, int prio) {
 	return -1;
 }
 
-//changes the executings thread state to APTO
-//inserts it in the end of the queue
-//calls the dispatcher to execute the next thread, saving the mains context
-//variable that points the return to the mains thread after the cyield (0 -> SUCCESS; -1 -> ERROR)
-
-int cyield(){
-	exec->state = PROCST_APTO;
-
-	changeState(&aptos, exec);
-	swapcontext(&exec->context, &dispatch_ctx);
-	
-	returnThread = 0;
-	return 0;	
-}
-
 int cjoin(int tid) {
+	int flagEsperando;	
+	
+	// if ((FirstFila2(&filaAptos[0]) == 0) || (FirstFila2(&filaBloqueados) == 0)
+	// 	|| (FirstFila2(&filaAptosSuspensos) == 0) || (FirstFila2(&filaBloqueadosSusp) == 0)){
+
+	// 	flagEsperando = ((verifyCjoin(tid, filaAptos[0])) || (verifyCjoin(tid, filaBloqueados))
+	// 		|| (verifyCjoin(tid, filaAptosSuspensos)) || (verifyCjoin(tid, filaBloqueadosSusp)));
+
+	// 	if (flagEsperando == 0)
+	// 		return -1;
+
+	// 	// flagEsperando = checkJoin(tid);
+	// 	// Remover
+	// 	flagEsperando = 0;
+
+	// 	if (flagEsperando == 0){
+	// 		threadExecutando->state = PROCST_BLOQ;
+	// 		changeState(&filaBloqueados, threadExecutando);
+	// 		swapcontext(&threadExecutando->context, &dispatcher_ctx);
+
+	// 		return 0;
+	// 	}
+	// }
+
 	return -1;
 }
 
-int csem_init(csem_t *sem, int count) {
-	return -1;
+int csem_init(csem_t *sem, int count){
+
+	sem->count = count;
+	sem->fila  = (FILA2 *)malloc(sizeof(FILA2));
+
+	if(sem->fila != NULL){
+		printf("Não foi possível alocar memória\n");
+		return -1;
+	}
+
+	if(CreateFila2(sem->fila) != 0){
+		printf("Fila em csem_init não foi criada!\n");
+		return -1;
+	}
+
+	return 0;
 }
 
-int cwait(csem_t *sem) {
-	return -1;
+int cwait(csem_t *sem){
+	sem->count--;
+
+	if(sem->count < 0){
+
+		exec->state = PROCST_BLOQ;
+
+		if(AppendFila2(sem->fila, (void *) threadExecutando) != 0){
+			printf("Nao foi colocada no fim de sem->fila em cwait()\n");
+			return -1;
+		}
+		swapcontext(&threadExecutando->context, &dispatcher_ctx);	
+	} 
+	
+	return 0;
+	
 }
 
 int csignal(csem_t *sem) {
-	return -1;
+	sem->count++;
+
+	if(FirstFila2(sem->fila) == 0){
+		
+		TCB_t *t_des = (TCB_t *) GetAtIteratorFila2(sem->fila);
+		t_des->state = PROCST_APTO;
+		
+		changeState(&filaAptos[0], t_des);
+		
+		if(DeleteAtIteratorFila2(sem->fila) != 0){
+			printf("Nao foi deletada da fila do semaforo em csignal()\n");
+			return -1;
+		}
+	}
+		
+	return 0;	
 }
 
-int cidentify (char *name, int size) {
-	strncpy (name, "Sergio Cechin - 2018/2 - Teste de compilacao.", size);
-	return 0;
+int cidentify(char *name, int size){
+	char student[MAX_STU_CHAR] = "";
+
+	int i;
+	int st2 = strlen(STU1);
+	int st3 = st2 + strlen(STU2);
+	int letters;
+
+	strcat(student, STU1);
+	strcat(student, STU2);
+	strcat(student, STU3);
+	
+	if(size >= MAX_STU_CHAR){
+		for( i = 0; i < MAX_STU_CHAR;i++)
+		name[i] = student[i];
+		return 0;
+	}
+
+	else if( size >= 9){
+		letters = size/3 - 2;
+		
+		for(i = 0; i < letters; i++){
+			name[i] = student[i];
+			name[i + letters + 1] = student[i + st2];
+			name[i + 2*(letters + 1)] = student[i + st3];
+		}
+		
+		name[letters] = '\n';
+		name[2*(letters) +1]= '\n';
+		name[i + 2*(letters + 1) + 1] = '\0';
+	}
+
+	return -1;
 }
 
 
@@ -241,4 +343,18 @@ int	Insert(PFILA2 pfila, TCB_t *tcb) {
 		return InsertAfterIteratorFila2(pfila, tcb);
 	}	
 	return AppendFila2(pfila, (void *)tcb);
+}
+
+void changeState(PFILA2 fila, TCB_t *proxThread){
+
+	//inserts in the fila
+
+	if (threadExecutando != NULL)
+		if(Insert(fila, proxThread) != 0)
+			printf("changeState() nao conseguiu inserir na fila!\n");
+}
+
+int checkJoin(int tid){
+
+	return -1;
 }
