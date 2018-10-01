@@ -20,9 +20,14 @@ cJoin()s
 lookForTidinBlockedQueue()
 */
 
+/* STUCTURE */
+typedef struct threadEsperando{
+	int tidEsperando;
+	int tidSendoEsperada;
+} threadEsperando;
+
 int inicializado = 0;
 int ultimo_tid = 1;
-// int returnThread = 0; inutil??
 
 TCB_t *threadExecutando;
 TCB_t *threadPrincipal;
@@ -91,33 +96,33 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 		inicializado = 1;	
 	}
 
-	TCB_t *thread;
-	thread = (TCB_t*) malloc(sizeof(TCB_t));
+	TCB_t *threadCriada;
+	threadCriada = (TCB_t*) malloc(sizeof(TCB_t));
 
-	thread->tid = ultimo_tid;
-	thread->prio = prio;
-	thread->state = 0;
+	threadCriada->tid = ultimo_tid;
+	threadCriada->prio = prio;
+	threadCriada->state = 0;
 
-	getcontext(&(thread->context));
+	getcontext(&(threadCriada->context));
 
-	thread->context.uc_link = &threadEnd_ctx;
-	thread->context.uc_stack.ss_sp = (char*) malloc(stackSize);
-	thread->context.uc_stack.ss_size = stackSize;
+	threadCriada->context.uc_link = &threadEnd_ctx;
+	threadCriada->context.uc_stack.ss_sp = (char*) malloc(stackSize);
+	threadCriada->context.uc_stack.ss_size = stackSize;
 	
-	makecontext(&(thread->context), (void (*) (void))start, 1, arg);
+	makecontext(&(threadCriada->context), (void (*) (void))start, 1, arg);
 
-	if (Insert(&filaAptos[0], thread) == 0)
+	if (Insert(&filaAptos[0], threadCriada) == 0)
 		printf("Nova Thread foi inserida na fila de Aptos\n");
 	else{
 		printf("Erro ao inserir na fila de Aptos\n");
 		return -1;
 	}
 
-	printf("Thread Criada - ID: %d\n", thread->tid);
+	printf("Thread Criada - ID: %d\n", threadCriada->tid);
 
 	ultimo_tid++;
-	
-	return thread->tid;
+
+	return threadCriada->tid;
 }
 
 int cyield(){
@@ -137,6 +142,13 @@ int csetprio(int tid, int prio) {
 int cjoin(int tid) {
 	int flagEsperando;	
 	
+	if(filaCjoin.it == NULL){
+		if(CreateFila2(&filaCjoin) != 0){
+			printf("Fila cJoin não foi criada :(\n");
+			return -1;
+		}
+	}
+
 	// if ((FirstFila2(&filaAptos[0]) == 0) || (FirstFila2(&filaBloqueados) == 0)
 	// 	|| (FirstFila2(&filaAptosSuspensos) == 0) || (FirstFila2(&filaBloqueadosSusp) == 0)){
 
@@ -195,7 +207,6 @@ int cwait(csem_t *sem){
 	} 
 	
 	return 0;
-	
 }
 
 int csignal(csem_t *sem) {
@@ -262,7 +273,7 @@ void inicializaPrincipal(){
 	threadPrincipal = (TCB_t*) malloc(sizeof(TCB_t));
 		
 	threadPrincipal->tid = 0;	
-	threadPrincipal->prio = 0;	
+	threadPrincipal->prio = 0;
 	threadPrincipal->state = PROCST_EXEC;	
 	
 	getcontext(&threadPrincipal->context);

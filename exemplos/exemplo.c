@@ -37,4 +37,3 @@ int main(int argc, char *argv[]) {
 
 	printf("Eu sou a main voltando para terminar o programa\n");
 }
-
