@@ -34,8 +34,8 @@ TCB_t *threadPrincipal;
 
 FILA2 filaAptos[3];
 FILA2 filaBloqueados;
-FILA2 filaAptosSuspensos;
-FILA2 filaBloqueadosSusp;
+// FILA2 filaAptosSuspensos;
+// FILA2 filaBloqueadosSusp;
 FILA2 filaCjoin;
 
 ucontext_t threadEnd_ctx, dispatcher_ctx;
@@ -83,15 +83,22 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 			return -1;
 		}	
 		
-		if(CreateFila2(&filaAptosSuspensos) != 0){
-			printf("Fila de aptos-suspensos não foi criada\n");
-			return -1;
-		}
 		
-		if(CreateFila2(&filaBloqueadosSusp) != 0){
-			printf("Fila de bloqueados-suspensos não foi criada\n");
+		if(CreateFila2(&filaCjoin) != 0){
+			printf("Fila Cjoin não foi criada\n");
 			return -1;
-		}
+		}	
+		// ISSO NAO TEM NO NOSSO - basso 
+
+		// if(CreateFila2(&filaAptosSuspensos) != 0){
+		// 	printf("Fila de aptos-suspensos não foi criada\n");
+		// 	return -1;
+		// }
+		
+		// if(CreateFila2(&filaBloqueadosSusp) != 0){
+		// 	printf("Fila de bloqueados-suspensos não foi criada\n");
+		// 	return -1;
+		// }
 		
 		inicializado = 1;	
 	}
@@ -101,7 +108,11 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 
 	threadCriada->tid = ultimo_tid;
 	threadCriada->prio = prio;
-	threadCriada->state = 0;
+	
+
+
+	threadCriada->state = PROCST_APTO;
+	// threadCriada->state = 0; ?? estado 0 é criado, não deve ser apto = 1? 
 
 	getcontext(&(threadCriada->context));
 
@@ -111,6 +122,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 	
 	makecontext(&(threadCriada->context), (void (*) (void))start, 1, arg);
 
+	
 	if (Insert(&filaAptos[0], threadCriada) == 0)
 		printf("Nova Thread foi inserida na fila de Aptos\n");
 	else{
@@ -148,29 +160,31 @@ int cjoin(int tid) {
 			return -1;
 		}
 	}
+	//basso modificou
+	if ((FirstFila2(&filaAptos[0]) == 0) || (FirstFila2(&filaBloqueados) == 0)){
+		
 
-	// if ((FirstFila2(&filaAptos[0]) == 0) || (FirstFila2(&filaBloqueados) == 0)
-	// 	|| (FirstFila2(&filaAptosSuspensos) == 0) || (FirstFila2(&filaBloqueadosSusp) == 0)){
+		flagEsperando = ((verifyCjoin(tid, filaAptos[0])) || (verifyCjoin(tid, filaBloqueados)));
 
-	// 	flagEsperando = ((verifyCjoin(tid, filaAptos[0])) || (verifyCjoin(tid, filaBloqueados))
-	// 		|| (verifyCjoin(tid, filaAptosSuspensos)) || (verifyCjoin(tid, filaBloqueadosSusp)));
+		if (flagEsperando == 0)
+			return -1;
 
-	// 	if (flagEsperando == 0)
-	// 		return -1;
+		// flagEsperando = checkJoin(tid);
+		// Remover 
+		//chamar aqui a função pra testar se tem mais de uma thread esperando pela mesma thread,
+		// comparar lista FILA2 filaCjoin
 
-	// 	// flagEsperando = checkJoin(tid);
-	// 	// Remover
-	// 	flagEsperando = 0;
+		flagEsperando = 0; 
 
-	// 	if (flagEsperando == 0){
-	// 		threadExecutando->state = PROCST_BLOQ;
-	// 		changeState(&filaBloqueados, threadExecutando);
-	// 		swapcontext(&threadExecutando->context, &dispatcher_ctx);
+		if (flagEsperando == 0){
+			threadExecutando->state = PROCST_BLOQ;
+			changeState(&filaBloqueados, threadExecutando);
+			swapcontext(&threadExecutando->context, &dispatcher_ctx);
 
-	// 		return 0;
-	// 	}
-	// }
-
+			return 0;
+		}
+	}
+	// tem que chamar o dispatcher aqui se pá - pra testar prio
 	return -1;
 }
 
