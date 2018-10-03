@@ -30,13 +30,12 @@ int main(int argc, char *argv[]) {
 
 	//1
 	id1 = ccreate(func0, (void *)&i, 0);
-	cyield();
 	//2
 	id2 = ccreate(func1, (void *)&i, 1);
 
 	printf("\n------Eu sou a main apos a criacao de ID1 e ID2------\n\n");
 
-	cjoin(5);
+	cjoin(id1);
 
 	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id1);
 
