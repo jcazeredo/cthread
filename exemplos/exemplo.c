@@ -13,12 +13,12 @@
 #include <stdio.h>
 
 void* func0(void *arg) {
-	printf("\nEu sou a thread ID1 imprimindo %d\n\n", *((int *)arg));
+	printf("\n------Eu sou a thread ID1 imprimindo %d------\n\n", *((int *)arg));
 	return;
 }
 
 void* func1(void *arg) {
-	printf("\nEu sou a thread ID2 imprimindo %d\n\n", *((int *)arg));
+	printf("\n------Eu sou a thread ID2 imprimindo %d------\n\n", *((int *)arg));
 	return;
 }
 
@@ -31,14 +31,16 @@ int main(int argc, char *argv[]) {
 	id1 = ccreate(func0, (void *)&i, 0);
 	//2
 	id2 = ccreate(func1, (void *)&i, 1);
-	//3
 
-	printf("Eu sou a main apos a criacao de ID1 e ID2\n");
+	printf("\n------Eu sou a main apos a criacao de ID1 e ID2------\n\n");
 
 	cjoin(id1);
-	cjoin(id2);
-	csetprio(1,1);
-	// cjoin(id2);
 
-	printf("Eu sou a main voltando para terminar o programa\n");
+	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id1);
+
+	cjoin(id2);
+	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id2);
+	csetprio(1,1);
+
+	printf("\n------Eu sou a main voltando para terminar o programa------\n");
 }

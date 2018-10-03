@@ -57,13 +57,12 @@ int retornaTidEsperando(int tid, int del);
 
 // Retorna o TID da thread criada
 int ccreate (void* (*start)(void*), void *arg, int prio) {
-	// Remover
-	printf("Função ccreate Iniciada\n");
+	
 
 	if(!inicializado){
-		// Remover
-		printf("Função ccreate Iniciada - Entrou if\n");
-		
+		//remover
+		system("clear");
+
 		inicializaPrincipal();
 		inicializaDispatcher();
 		inicializaThreadEnd();
@@ -116,10 +115,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 	
 	makecontext(&threadCriada->context, (void (*) (void))start, 1, arg);
 	
-	if (Insert(&filaAptos[prio], threadCriada) == 0)
-		printf("Nova Thread foi inserida na fila de Aptos\n");
-	else{
-		printf("Erro ao inserir na fila de Aptos\n");
+	if(Insert(&filaAptos[prio], threadCriada) != 0){
 		return -1;
 	}
 
@@ -143,10 +139,9 @@ int cyield(){
 }
 
 int csetprio(int tid, int prio) {
-	printf("prio antiga %d \n",threadExecutando->prio);
+	printf("Alterando prioridade da thread executando (%d) %d -> %d\n", threadExecutando->tid, threadExecutando->prio, prio);
 	threadExecutando->prio = prio;
-	printf("prio nova %d \n",threadExecutando->prio);
-	return -1;
+	return 0;
 }
 
 int cjoin(int tid) {
@@ -155,13 +150,6 @@ int cjoin(int tid) {
 
 	printf("Requisição de cjoin para tid %d\n", tid);
 
-	if(filaJoin.it == NULL){
-		if(CreateFila2(&filaJoin) != 0){
-			printf("Fila cJoin não foi criada :(\n");
-			return -1;
-		}
-	}
-
 	// Verifica se tid existe
 	if(!tidExiste(tid)){
 		return -1;
@@ -169,6 +157,7 @@ int cjoin(int tid) {
 
 	// Procura se a tid já tá em estado terminado
 	if(procuraTidFila(&filaTerminados, tid, 0) != NULL){
+		printf("tid %d já ta em estado de terminado, n faz nada\n", tid);
 		return 0;
 	}
 
@@ -178,7 +167,7 @@ int cjoin(int tid) {
 		w = (threadEsperando*) malloc(sizeof(threadEsperando));
 		w->tidEsperando = threadExecutando->tid;
 		w->tidSendoEsperada = tid;
-		printf("(%d, %d)\n", w->tidEsperando, w->tidSendoEsperada);
+		printf("cjoin (%d, %d) adicionado a fila de cjoin\n", w->tidEsperando, w->tidSendoEsperada);
 		// Adiciona relação de espera
 		AppendFila2(&filaJoin, w);
 
@@ -284,9 +273,6 @@ int cidentify(char *name, int size){
 /* ################### Funções Auxiliares ################### */
 
 void inicializaPrincipal(){
-	// Remover
-	printf("Função inicializaPrincipal Iniciada\n");
-
 	mainThread = (TCB_t*) malloc(sizeof(TCB_t));
 		
 	mainThread->tid = 0;	
@@ -298,9 +284,6 @@ void inicializaPrincipal(){
 }
 
 void inicializaDispatcher(){
-	// Remover
-	printf("Função inicializaDispatcher Iniciada\n");
-
 	getcontext(&dispatcher_ctx);
 
 	dispatcher_ctx.uc_link = 0;
@@ -311,9 +294,6 @@ void inicializaDispatcher(){
 }
 
 void inicializaThreadEnd(){
-	// Remover
-	printf("Função inicializaThreadEnd Iniciada\n");
-
 	getcontext(&threadEnd_ctx);
 
 	threadEnd_ctx.uc_link = 0;
@@ -330,7 +310,7 @@ void dispatcher(){
 	// Verifica qual próxima thread pra executar
 	threadExecutando = proximaExecucao();
 	printf("Proxima Thread: %p\n", threadExecutando);
-
+	printFilas();
 	// Remove a thread escolhida da fila de aptos
 	if (threadExecutando != NULL){
 		if (FirstFila2(&filaAptos[threadExecutando->prio]) == 0 && DeleteAtIteratorFila2(&filaAptos[threadExecutando->prio]) == 0)
@@ -345,10 +325,7 @@ void dispatcher(){
 }
 
 void threadEnd(){
-	// Remover
-	printf("Função threadEnd Iniciada\n");
-	
-	printf("thread finalizando = %d\n", threadExecutando->tid);
+	printf("thread tid %d finalizando\n", threadExecutando->tid);
 	
 	trocarEstado(&filaTerminados, threadExecutando);
 
@@ -363,9 +340,6 @@ void threadEnd(){
 }
 
 TCB_t *proximaExecucao(){
-	// Remover
-	printf("Função proximaExecucao Iniciada\n");
-
 	if (FirstFila2(&filaAptos[0]) == 0 && GetAtIteratorFila2(&filaAptos[0]) != NULL)
 		return (TCB_t *)GetAtIteratorFila2(&filaAptos[0]);
 	else if (FirstFila2(&filaAptos[1]) == 0 && GetAtIteratorFila2(&filaAptos[1]) != NULL)
@@ -377,9 +351,6 @@ TCB_t *proximaExecucao(){
 }
 
 int	Insert(PFILA2 pfila, TCB_t *tcb) {
-
-	// Remover
-	printf("Função Insert Iniciada\n");
 
 	if (LastFila2(pfila) == 0) {
 		return InsertAfterIteratorFila2(pfila, tcb);
@@ -423,8 +394,6 @@ int retornaTidEsperando(int tid, int del){
 	threadEsperando *espera_i;
 	int tid_esperando;
 
-	// Remover
-	printf("Procurando se alguém ta esperando tid %d\n", tid);
 	// Verifica se há um elemento na fila de Cjoin
 	if(FirstFila2(&filaJoin) == 0){
 		// Itera sobre as relações de espera
@@ -455,9 +424,6 @@ int tidExiste(int tid){
 	TCB_t *thread_i;
 	int i;
 
-	// Remover
-	printf("Procurando se a TID %d existe\n", tid);
-
 	// Procura na fila de aptos
 	// printf("Procurando na Fila de Aptos\n");
 	for(i = 0; i < 3; i++){
@@ -467,7 +433,7 @@ int tidExiste(int tid){
 				thread_i = (TCB_t *)GetAtIteratorFila2(&filaAptos[i]);
 
 				if(thread_i->tid == tid){
-					printf("Tid %d existe \n", tid);
+					printf("tid %d existe \n", tid);
 					return 1;
 				}
 			
@@ -483,7 +449,7 @@ int tidExiste(int tid){
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaBloqueados);
 
 			if(thread_i->tid == tid){
-				printf("Tid %d existe \n", tid);
+				printf("tid %d existe \n", tid);
 				return 1;
 			}
 		
@@ -498,7 +464,7 @@ int tidExiste(int tid){
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaTerminados);
 
 			if(thread_i->tid == tid){
-				printf("Tid %d existe \n", tid);
+				printf("tid %d existe \n", tid);
 				return 1;
 			}
 		
@@ -513,11 +479,11 @@ void printFilas(){
 	TCB_t *thread_i;
 	int i;
 
-	printf("Printando o que existe nas filas");
+	printf("\n\nPrintando o que existe nas filas");
 	// Procura na fila de aptos
 	
 	for(i = 0; i < 3; i++){
-		printf("\nFila de Aptos %d\n", i);
+		printf("\n## Fila de Aptos %d ##\n", i);
 		if(FirstFila2(&filaAptos[i]) == 0){
 			do{
 				thread_i = (TCB_t *)GetAtIteratorFila2(&filaAptos[i]);
@@ -530,7 +496,7 @@ void printFilas(){
 	}
 
 	// Procura na fila de bloqueados
-	printf("\nFila de Bloqueados\n");
+	printf("\n## Fila de Bloqueados ##\n");
 	if(FirstFila2(&filaBloqueados) == 0){
 		do{
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaBloqueados);
@@ -543,7 +509,7 @@ void printFilas(){
 	}
 
 	// Procura na fila de terminados
-	printf("\nFila de Terminados\n");
+	printf("\n## Fila de Terminados ##\n");
 	if(FirstFila2(&filaTerminados) == 0){
 		do{
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaTerminados);
@@ -554,14 +520,15 @@ void printFilas(){
 			thread_i = (TCB_t *)NextFila2(&filaTerminados);
 		}while(thread_i == 0);
 	}
+
+	printf("## Executando ##\n");
+	printf("TID: %d\n", threadExecutando->tid);
+	printf("Estado: %d\n\n", threadExecutando->state);
 } 
 
 // NULL = não achou ou de erro, procura Tid numa fila específica e pode remover se quiser
 TCB_t * procuraTidFila(PFILA2 pfila, int tid, int del){
 	TCB_t *thread_i;
-
-	// Remover
-	printf("Procurando TID %d em uma fila\n", tid);
 
 	// Verifica se há um elemento na fila de Cjoin
 	if(FirstFila2(pfila) == 0){
@@ -582,18 +549,14 @@ TCB_t * procuraTidFila(PFILA2 pfila, int tid, int del){
 		}while(thread_i == 0);
 	}
 
-	printf("Não encontrou na fila a tid %d\n", tid);
-
 	return NULL;
 }
 
 // Avisa que a tid terminou e que pode liberar se alguem tava esperando
 void avisaJoin(int tid){
-	// Remover
-	printf("iniciou avisa Join\n");
-
 	int tid_esperando;
 	TCB_t *threadEsperando;
+
 	tid_esperando = retornaTidEsperando(tid, 1);
 
 	if(tid_esperando == -1){
@@ -602,9 +565,8 @@ void avisaJoin(int tid){
 
 	threadEsperando = procuraTidFila(&filaBloqueados, tid_esperando, 1);
 	if(threadEsperando != NULL){
-		printf("Encontrou, trocando de estado\n");
+		printf("Trocando %d para apto, pois %d terminou de executar (cjoin)\n", threadEsperando->tid, tid);
 		threadEsperando->state = PROCST_APTO;
 		trocarEstado(&filaAptos[threadEsperando->prio], threadEsperando);
-		printFilas();
 	}
 }
