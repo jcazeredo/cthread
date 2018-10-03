@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
 
 	printf("Eu sou a main apos a criacao de ID1 e ID2\n");
 
-	cjoin(id1);
-	cjoin(id2);
+	// cjoin(clearid1);
+	// cjoin(id2);
 
 	printf("Eu sou a main voltando para terminar o programa\n");
 }

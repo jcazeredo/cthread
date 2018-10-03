@@ -125,6 +125,9 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 
 	ultimo_tid++;
 
+	// ???
+	swapcontext(&threadPrincipal->context, &dispatcher_ctx);
+
 	return threadCriada->tid;
 }
 
@@ -323,6 +326,8 @@ void dispatcher(){
 	}
 	else{
 		printf("Acabaram as threads para serem executadas\n");
+
+		// Precisa???
 		setcontext(&threadPrincipal->context);
 	}
 }
