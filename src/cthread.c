@@ -143,7 +143,6 @@ int cyield(){
 }
 
 int csetprio(int tid, int prio) {
-	
 	printf("prio antiga %d \n",threadExecutando->prio);
 	threadExecutando->prio = prio;
 	printf("prio nova %d \n",threadExecutando->prio);
@@ -151,8 +150,10 @@ int csetprio(int tid, int prio) {
 }
 
 int cjoin(int tid) {
-	int flagEsperando;	
+	int flagEsperando;
 	threadEsperando *w;
+
+	printf("Requisição de cjoin para tid %d\n", tid);
 
 	if(filaJoin.it == NULL){
 		if(CreateFila2(&filaJoin) != 0){
@@ -164,6 +165,11 @@ int cjoin(int tid) {
 	// Verifica se tid existe
 	if(!tidExiste(tid)){
 		return -1;
+	}
+
+	// Procura se a tid já tá em estado terminado
+	if(procuraTidFila(&filaTerminados, tid, 0) != NULL){
+		return 0;
 	}
 
 	flagEsperando = procuraTidEsperando(tid);
@@ -392,8 +398,6 @@ void trocarEstado(PFILA2 fila, TCB_t *thread){
 int procuraTidEsperando(int tid){
 	threadEsperando *espera_i;
 
-	// Remover
-	printf("Cjoin para tid %d\n", tid);
 	// Verifica se há um elemento na fila de Cjoin
 	if(FirstFila2(&filaJoin) == 0){
 		// Itera sobre as relações de espera
