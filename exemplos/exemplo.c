@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
 	printf("\n------Eu sou a main apos a criacao de ID1 e ID2------\n\n");
 
-	cjoin(id1);
+	cjoin(5);
 
 	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id1);
 
@@ -43,4 +43,9 @@ int main(int argc, char *argv[]) {
 	csetprio(1,1);
 
 	printf("\n------Eu sou a main voltando para terminar o programa------\n");
+
+	int size = 100;
+	char *name = (char *)malloc(size*sizeof(char));
+	cidentify(name, size);
+	printf("%s\n", name);
 }

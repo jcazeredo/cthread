@@ -152,6 +152,7 @@ int cjoin(int tid) {
 
 	// Verifica se tid existe
 	if(!tidExiste(tid)){
+		printf("tid %d não existe\n", tid);
 		return -1;
 	}
 
@@ -236,38 +237,8 @@ int csignal(csem_t *sem) {
 }
 
 int cidentify(char *name, int size){
-	char student[MAX_STU_CHAR] = "";
-
-	int i;
-	int st2 = strlen(STU1);
-	int st3 = st2 + strlen(STU2);
-	int letters;
-
-	strcat(student, STU1);
-	strcat(student, STU2);
-	strcat(student, STU3);
-	
-	if(size >= MAX_STU_CHAR){
-		for( i = 0; i < MAX_STU_CHAR;i++)
-		name[i] = student[i];
-		return 0;
-	}
-
-	else if( size >= 9){
-		letters = size/3 - 2;
-		
-		for(i = 0; i < letters; i++){
-			name[i] = student[i];
-			name[i + letters + 1] = student[i + st2];
-			name[i + 2*(letters + 1)] = student[i + st3];
-		}
-		
-		name[letters] = '\n';
-		name[2*(letters) +1]= '\n';
-		name[i + 2*(letters + 1) + 1] = '\0';
-	}
-
-	return -1;
+	strncpy(name, "Julio - 000 \nBasso - 000 \nJuan - 000 ", size);
+	return 0;
 }
 
 /* ################### Funções Auxiliares ################### */
