@@ -11,6 +11,7 @@
 #include "../include/support.h"
 #include "../include/cthread.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void* func0(void *arg) {
 	printf("\n------Eu sou a thread ID1 imprimindo %d------\n\n", *((int *)arg));
@@ -29,6 +30,7 @@ int main(int argc, char *argv[]) {
 
 	//1
 	id1 = ccreate(func0, (void *)&i, 0);
+	cyield();
 	//2
 	id2 = ccreate(func1, (void *)&i, 1);
 
@@ -43,6 +45,8 @@ int main(int argc, char *argv[]) {
 	csetprio(1,1);
 
 	printf("\n------Eu sou a main voltando para terminar o programa------\n");
+
+
 
 	int size = 100;
 	char *name = (char *)malloc(size*sizeof(char));

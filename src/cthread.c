@@ -6,18 +6,8 @@
 #include "../include/cdata.h"
 
 #define stackSize SIGSTKSZ
-#define MAX_STU_CHAR 100
-#define STU1 "Julio - 000 \n"
-#define STU2 "Basso - 000 \n"
-#define STU3 "Juan - 000 \n"
 
 /*
-TO-DO:
-cidentify()
-csetprio()
-cJoin():
-	- verificar quando termina
-lookForTidinBlockedQueue()
 */
 
 /* STUCTURE */
@@ -119,7 +109,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 		return -1;
 	}
 
-	printf("Thread Criada - ID: %d\n", threadCriada->tid);
+	printf("Thread Criada - TID: %d\n", threadCriada->tid);
 
 	ultimo_tid++;
 
@@ -130,15 +120,18 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 }
 
 int cyield(){
+	printf("tid %d esta liberando voluntariamente, parabens pela humildade\n", threadExecutando->tid);
 	threadExecutando->state = PROCST_APTO;
 
-	trocarEstado(&filaAptos[0], threadExecutando);
+	trocarEstado(&filaAptos[threadExecutando->prio], threadExecutando);
 	swapcontext(&threadExecutando->context, &dispatcher_ctx);
 
 	return 0;	
 }
 
 int csetprio(int tid, int prio) {
+	if(prio < 0 || prio > 2)
+		return -1;
 	printf("Alterando prioridade da thread executando (%d) %d -> %d\n", threadExecutando->tid, threadExecutando->prio, prio);
 	threadExecutando->prio = prio;
 	return 0;
@@ -280,18 +273,15 @@ void dispatcher(){
 
 	// Verifica qual próxima thread pra executar
 	threadExecutando = proximaExecucao();
-	printf("Proxima Thread: %p\n", threadExecutando);
-	printFilas();
+	if(threadExecutando == NULL){
+		printf("Proxima Thread: %p\n", threadExecutando);
+	}
+	
 	// Remove a thread escolhida da fila de aptos
 	if (threadExecutando != NULL){
 		if (FirstFila2(&filaAptos[threadExecutando->prio]) == 0 && DeleteAtIteratorFila2(&filaAptos[threadExecutando->prio]) == 0)
+			printFilas();
 			setcontext(&threadExecutando->context);
-	}
-	else{
-		printf("Acabaram as threads para serem executadas\n");
-
-		// Precisa???
-		// setcontext(&mainThread->context);
 	}
 }
 
@@ -450,51 +440,60 @@ void printFilas(){
 	TCB_t *thread_i;
 	int i;
 
-	printf("\n\nPrintando o que existe nas filas");
 	// Procura na fila de aptos
-	
 	for(i = 0; i < 3; i++){
-		printf("\n## Fila de Aptos %d ##\n", i);
 		if(FirstFila2(&filaAptos[i]) == 0){
+			printf("\n###### Fila de Aptos [%d] ######\n", i);
 			do{
 				thread_i = (TCB_t *)GetAtIteratorFila2(&filaAptos[i]);
-				printf("TID: %d\n", thread_i->tid);
-				printf("Estado: %d\n\n", thread_i->state);
+				printf("\tTID: %d\n", thread_i->tid);
+				printf("\tEstado: %d\n\n", thread_i->state);
 
 				thread_i = (TCB_t *)NextFila2(&filaAptos[i]);
 			}while(thread_i == 0);
+			printf("-------------------------\n");
 		}
 	}
 
+
 	// Procura na fila de bloqueados
-	printf("\n## Fila de Bloqueados ##\n");
+	
 	if(FirstFila2(&filaBloqueados) == 0){
+		printf("\n###### Fila de Bloqueados######\n");
 		do{
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaBloqueados);
 
-			printf("TID: %d\n", thread_i->tid);
-			printf("Estado: %d\n\n", thread_i->state);
+			printf("\tTID: %d\n", thread_i->tid);
+			printf("\tEstado: %d\n\n", thread_i->state);
 		
 			thread_i = (TCB_t *)NextFila2(&filaBloqueados);
 		}while(thread_i == 0);
+		printf("-------------------------\n");
 	}
 
+	
+
 	// Procura na fila de terminados
-	printf("\n## Fila de Terminados ##\n");
+	
 	if(FirstFila2(&filaTerminados) == 0){
+		printf("\n###### Fila de Terminados ######\n");
 		do{
 			thread_i = (TCB_t *)GetAtIteratorFila2(&filaTerminados);
 
-			printf("TID: %d\n", thread_i->tid);
-			printf("Estado: %d\n\n", thread_i->state);
+			printf("\tTID: %d\n", thread_i->tid);
+			printf("\tEstado: %d\n\n", thread_i->state);
 		
 			thread_i = (TCB_t *)NextFila2(&filaTerminados);
 		}while(thread_i == 0);
+		printf("-------------------------\n");
 	}
 
-	printf("## Executando ##\n");
-	printf("TID: %d\n", threadExecutando->tid);
-	printf("Estado: %d\n\n", threadExecutando->state);
+
+	
+	printf("\n###### Próxima Thread a Executar ######\n");
+	printf("\tTID: %d\n", threadExecutando->tid);
+	printf("\tEstado: %d\n\n", threadExecutando->state);
+	printf("-------------------------\n\n");
 } 
 
 // NULL = não achou ou de erro, procura Tid numa fila específica e pode remover se quiser
