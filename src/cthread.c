@@ -143,7 +143,10 @@ int cyield(){
 }
 
 int csetprio(int tid, int prio) {
-	printFilas();
+	
+	printf("prio antiga %d \n",threadExecutando->prio);
+	threadExecutando->prio = prio;
+	printf("prio nova %d \n",threadExecutando->prio);
 	return -1;
 }
 
