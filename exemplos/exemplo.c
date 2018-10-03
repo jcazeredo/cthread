@@ -30,12 +30,14 @@ int main(int argc, char *argv[]) {
 
 	//1
 	id1 = ccreate(func0, (void *)&i, 0);
+	// printf("ID: %d\n", id1);
 	//2
 	id2 = ccreate(func1, (void *)&i, 1);
-
+	// printf("ID: %d\n", id1)
 	printf("\n------Eu sou a main apos a criacao de ID1 e ID2------\n\n");
 
 	cjoin(id1);
+	cyield();
 
 	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id1);
 
@@ -43,9 +45,7 @@ int main(int argc, char *argv[]) {
 	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id2);
 	csetprio(1,1);
 
-	printf("\n------Eu sou a main voltando para terminar o programa------\n");
-
-
+	printf("\n------Eu sou a main voldddtando para terminar o programa------\n");
 
 	int size = 100;
 	char *name = (char *)malloc(size*sizeof(char));

@@ -7,12 +7,14 @@
 
 #define stackSize SIGSTKSZ
 
-/* STUCTURE */
+// Estrutura que define a relação de espera entre duas threads (cJoin)
 typedef struct threadEsperando{
 	int tidEsperando;
 	int tidSendoEsperada;
 } threadEsperando;
 
+
+int inicializaGeral();
 void inicializaPrincipal();
 void inicializaDispatcher();
 void inicializaThreadEnd();
@@ -20,7 +22,7 @@ void dispatcher();
 void threadEnd();
 TCB_t *proximaExecucao();
 int	Insert(PFILA2 pfila, TCB_t *tcb);
-void trocarEstado(PFILA2 fila, TCB_t *thread);
+int trocarEstado(PFILA2 fila, TCB_t *thread);
 int checkJoin(int tid);
 int procuraTidEsperando(int tid);
 int tidExiste(int tid);
@@ -42,48 +44,9 @@ FILA2 filaJoin;
 
 ucontext_t threadEnd_ctx, dispatcher_ctx;
 
-int ccreate (void* (*start)(void*), void *arg, int prio) {
-	
-
-	if(!inicializado){
-		//remover
-		system("clear");
-
-		inicializaPrincipal();
-		inicializaDispatcher();
-		inicializaThreadEnd();
-
-		if(CreateFila2(&filaAptos[0]) != 0){
-			printf("Fila de aptos de prioridade alta não foi criada\n");
-			return -1;
-		}
-
-		if(CreateFila2(&filaAptos[1]) != 0){
-			printf("Fila de aptos de prioridade média não foi criada\n");
-			return -1;
-		}
-
-		if(CreateFila2(&filaAptos[2]) != 0){
-			printf("Fila de aptos de prioridade baixa não foi criada\n");
-			return -1;
-		}
-		
-		if(CreateFila2(&filaBloqueados) != 0){
-			printf("Fila de bloqueados não foi criada\n");
-			return -1;
-		}
-
-		if(CreateFila2(&filaTerminados) != 0){
-			printf("Fila de bloqueados não foi criada\n");
-			return -1;
-		}
-		
-		if(CreateFila2(&filaJoin) != 0){
-			printf("Fila Cjoin não foi criada\n");
-			return -1;
-		}	
-
-		inicializado = 1;	
+int ccreate(void* (*start)(void*), void *arg, int prio){
+	if(inicializaGeral() == -1){
+		return -1;
 	}
 
 	TCB_t *threadCriada;
@@ -109,25 +72,36 @@ int ccreate (void* (*start)(void*), void *arg, int prio) {
 
 	ultimo_tid++;
 
-	// ???
 	// swapcontext(&mainThread->context, &dispatcher_ctx);
 
 	return threadCriada->tid;
 }
 
 int cyield(){
+	if(inicializaGeral() == -1){
+		return -1;
+	}
+
 	printf("tid %d esta liberando voluntariamente, parabens pela humildade\n", threadExecutando->tid);
 	threadExecutando->state = PROCST_APTO;
 
-	trocarEstado(&filaAptos[threadExecutando->prio], threadExecutando);
+	if(trocarEstado(&filaAptos[threadExecutando->prio], threadExecutando) != 0)
+		return -1;
+
 	swapcontext(&threadExecutando->context, &dispatcher_ctx);
 
 	return 0;	
 }
 
 int csetprio(int tid, int prio) {
-	if(prio < 0 || prio > 2)
+	if(inicializaGeral() == -1){
 		return -1;
+	}
+
+	if(prio < 0 || prio > 2){
+		return -1;
+	}
+
 	printf("Alterando prioridade da thread executando (%d) %d -> %d\n", threadExecutando->tid, threadExecutando->prio, prio);
 	threadExecutando->prio = prio;
 	return 0;
@@ -138,8 +112,11 @@ int cjoin(int tid) {
 	int existe;
 	threadEsperando *w;
 
-	printf("Requisição de cjoin para tid %d\n", tid);
+	if(inicializaGeral() == -1){
+		return -1;
+	}
 
+	printf("Requisição de cjoin para tid %d\n", tid);
 
 	existe = tidExiste(tid);
 	// Verifica se tid existe 
@@ -175,11 +152,14 @@ int cjoin(int tid) {
 }
 
 int csem_init(csem_t *sem, int count){
+	if(inicializaGeral() == -1){
+		return -1;
+	}
 
 	sem->count = count;
 	sem->fila  = (FILA2 *)malloc(sizeof(FILA2));
 
-	if(sem->fila != NULL){
+	if(sem->fila == NULL){
 		printf("Não foi possível alocar memória\n");
 		return -1;
 	}
@@ -193,6 +173,10 @@ int csem_init(csem_t *sem, int count){
 }
 
 int cwait(csem_t *sem){
+	if(inicializaGeral() == -1){
+		return -1;
+	}
+
 	sem->count--;
 
 	if(sem->count < 0){
@@ -210,6 +194,10 @@ int cwait(csem_t *sem){
 }
 
 int csignal(csem_t *sem) {
+	if(inicializaGeral() == -1){
+		return -1;
+	}
+
 	sem->count++;
 
 	if(FirstFila2(sem->fila) == 0){
@@ -217,7 +205,9 @@ int csignal(csem_t *sem) {
 		TCB_t *t_des = (TCB_t *) GetAtIteratorFila2(sem->fila);
 		t_des->state = PROCST_APTO;
 		
-		trocarEstado(&filaAptos[0], t_des);
+		if(trocarEstado(&filaAptos[t_des->prio], t_des) == -1){
+			return -1;
+		}
 		
 		if(DeleteAtIteratorFila2(sem->fila) != 0){
 			printf("Nao foi deletada da fila do semaforo em csignal()\n");
@@ -229,7 +219,10 @@ int csignal(csem_t *sem) {
 }
 
 int cidentify(char *name, int size){
-	strncpy(name, "Julio - 000 \nBasso - 000 \nJuan - 000 ", size);
+	if(name == NULL){
+		return -1;
+	}
+	strncpy(name, "JULIO CESAR DE AZEREDO - 00285682\nJUAN SUZANO DA FONSECA - 00285689\nPEDRO MARTINS BASSO - 00285683", size);
 	return 0;
 }
 
@@ -238,6 +231,52 @@ int cidentify(char *name, int size){
 
 
 /* ################### Funções Auxiliares ################### */
+
+/*-------------------------------------------------------------------
+Função:	Verifica se é a primeira inicialização, se não for, inicializa tudo.
+Ret:	-1 = Erro | 0 = Sucesso
+-------------------------------------------------------------------*/
+int inicializaGeral(){
+	if(!inicializado){
+		inicializaPrincipal();
+		inicializaDispatcher();
+		inicializaThreadEnd();
+
+		if(CreateFila2(&filaAptos[0]) != 0){
+			printf("Fila de aptos de prioridade alta não foi criada\n");
+			return -1;
+		}
+
+		if(CreateFila2(&filaAptos[1]) != 0){
+			printf("Fila de aptos de prioridade média não foi criada\n");
+			return -1;
+		}
+
+		if(CreateFila2(&filaAptos[2]) != 0){
+			printf("Fila de aptos de prioridade baixa não foi criada\n");
+			return -1;
+		}
+		
+		if(CreateFila2(&filaBloqueados) != 0){
+			printf("Fila de bloqueados não foi criada\n");
+			return -1;
+		}
+
+		if(CreateFila2(&filaTerminados) != 0){
+			printf("Fila de bloqueados não foi criada\n");
+			return -1;
+		}
+		
+		if(CreateFila2(&filaJoin) != 0){
+			printf("Fila Cjoin não foi criada\n");
+			return -1;
+		}	
+
+		inicializado = 1;
+		return 0;
+	}
+	return 0;
+}
 
 /*-------------------------------------------------------------------
 Função:	Inicializa thread principal (mainthread).
@@ -288,15 +327,17 @@ void dispatcher(){
 
 	// Verifica qual próxima thread pra executar
 	threadExecutando = proximaExecucao();
-	if(threadExecutando == NULL){
-		printf("Proxima Thread: %p\n", threadExecutando);
-	}
 	
-	// Remove a thread escolhida da fila de aptos
-	if (threadExecutando != NULL){
-		if (FirstFila2(&filaAptos[threadExecutando->prio]) == 0 && DeleteAtIteratorFila2(&filaAptos[threadExecutando->prio]) == 0)
+	if(threadExecutando == NULL){
+		printf("Voltando a executar mainthread\n\n");
+		threadExecutando = mainThread;
+		setcontext(&mainThread->context);
+	}
+	else{
+		if (FirstFila2(&filaAptos[threadExecutando->prio]) == 0 && DeleteAtIteratorFila2(&filaAptos[threadExecutando->prio]) == 0){
 			printFilas();
 			setcontext(&threadExecutando->context);
+		}
 	}
 }
 
@@ -315,7 +356,7 @@ void threadEnd(){
 }
 
 /*-------------------------------------------------------------------
-Função:	Procura próxima thread a ser executada
+Função:	Procura próxima thread a ser executada.
 Ret:	NULL = Nenhuma Thread pra executar | Ponteiro TCB_t = Sucesso
 -------------------------------------------------------------------*/
 TCB_t *proximaExecucao(){
@@ -330,7 +371,7 @@ TCB_t *proximaExecucao(){
 }
 
 /*-------------------------------------------------------------------
-Função:	Insere thread na fila informada
+Função:	Insere thread na fila informada.
 Ret:	!= 0 => Erro | 0 = Sucesso
 -------------------------------------------------------------------*/
 int	Insert(PFILA2 pfila, TCB_t *tcb) {
@@ -342,13 +383,18 @@ int	Insert(PFILA2 pfila, TCB_t *tcb) {
 }
 
 /*-------------------------------------------------------------------
-Função:	Troca fila da thread
+Função:	Troca fila da thread.
+Ret:	-1 = Erro | 0 = Sucesso
 -------------------------------------------------------------------*/
-void trocarEstado(PFILA2 fila, TCB_t *thread){
+int trocarEstado(PFILA2 fila, TCB_t *thread){
 	if(threadExecutando != NULL){
-		if(Insert(fila, thread) != 0)
+		if(Insert(fila, thread) != 0){
 			printf("trocarEstado() nao conseguiu inserir na fila!\n");
+			return -1;
+		}
+		return 0;
 	}
+	return -1;
 }
 
 /*-------------------------------------------------------------------
@@ -495,7 +541,7 @@ void printFilas(){
 	TCB_t *thread_i;
 	int i;
 
-	// Procura na fila de aptos
+	// Printa fila de aptos
 	for(i = 0; i < 3; i++){
 		if(FirstFila2(&filaAptos[i]) == 0){
 			printf("\n###### Fila de Aptos [%d] ######\n", i);
@@ -511,8 +557,7 @@ void printFilas(){
 	}
 
 
-	// Procura na fila de bloqueados
-	
+	// Printa fila de bloqueados
 	if(FirstFila2(&filaBloqueados) == 0){
 		printf("\n###### Fila de Bloqueados######\n");
 		do{
@@ -528,8 +573,7 @@ void printFilas(){
 
 	
 
-	// Procura na fila de terminados
-	
+	// Printa fila de terminados
 	if(FirstFila2(&filaTerminados) == 0){
 		printf("\n###### Fila de Terminados ######\n");
 		do{
@@ -543,8 +587,7 @@ void printFilas(){
 		printf("-------------------------\n");
 	}
 
-
-	
+	// Printa thread a ser executada
 	printf("\n###### Próxima Thread a Executar ######\n");
 	printf("\tTID: %d\n", threadExecutando->tid);
 	printf("\tEstado: %d\n\n", threadExecutando->state);
