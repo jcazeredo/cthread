@@ -205,7 +205,7 @@ int csignal(csem_t *sem) {
 		TCB_t *t_des = (TCB_t *) GetAtIteratorFila2(sem->fila);
 		t_des->state = PROCST_APTO;
 		
-		if(Insert(&filaAptos[t_des->prio], t_des) == -1){
+		if(Insert(&filaAptos[t_des->prio], t_des) != 0){
 			return -1;
 		}
 		
