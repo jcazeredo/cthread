@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 	printf("\n------Eu sou a main apos cJoin(%d)------\n\n", id2);
 	csetprio(1,1);
 
-	printf("\n------Eu sou a main voldddtando para terminar o programa------\n");
+	printf("\n------Eu sou a main voltando para terminar o programa------\n");
 
 	int size = 100;
 	char *name = (char *)malloc(size*sizeof(char));
